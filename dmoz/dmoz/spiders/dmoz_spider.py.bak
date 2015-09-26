@@ -1,0 +1,47 @@
+import scrapy
+#import middlewares
+from scrapy.http import Request
+from dmoz.items import DmozItem
+
+class DmozSpider(scrapy.spiders.Spider):
+    name = "dmoz"
+    allowed_domains = ["dmoz.org"]
+    start_urls = [
+        #"http://www.ideacallin.com/wx.do"
+        "http://www.gamersky.com/handbook/201509/663508.shtml"
+	]
+    proxy_pool = [
+        #"http://112.25.41.136:80"
+	#"http://202.108.23.247:80"
+        "http://120.195.207.14:80"
+	#"http://120.195.193.223:80"
+	#"http://119.254.97.160:21320"
+	#"http://120.195.201.36:80"
+	]
+
+    def start_requests(self):
+        requests = []
+        for item in self.start_urls:
+            print item
+	    req = Request(url=item, headers={'Referer':None,'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.85 Safari/537.36'})
+            req.meta['proxy'] = self.proxy_pool[0]
+	    requests.append(req)
+	    
+        return requests
+
+    def parse(self, response):
+	item = DmozItem()
+	item['source_url'] = response.url
+	item['head_title'] = response.xpath('/html/head/title/text()').extract()[0].encode('utf-8').strip()
+	head_meta = ""
+	for meta in response.xpath('/html/head/meta').extract():
+	    head_meta = head_meta + meta.encode('utf-8').strip()
+	item['head_meta'] = head_meta
+	item['body_name'] = response.xpath('//div[@class="Mid2L_tit"]/h1/text()').extract()[0].encode('utf-8').strip()
+        item['body_desc'] = response.xpath('//div[@class="Mid2L_tit"]/div/text()').extract()[0].encode('utf-8').strip()
+	item['body_content'] = response.xpath('//div[@class="Mid2L_con"]').extract()[0].encode('utf-8').strip()
+	
+	yield item
+	#filename = "html_output/a.out"
+        #with open(filename, 'wb') as f:
+        #    f.write(response.body)
